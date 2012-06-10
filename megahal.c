@@ -1,60 +1,11 @@
-#include <libmowgli-2/mowgli.h>
+#include "mh.h"
 
-/*#include "megahal.h"*/
-
-typedef struct mh_string_ MegahalString;
-typedef struct mh_dict_   MegahalDict;
-typedef struct mh_swap_   MegahalSwap;
-typedef struct mh_node_   MegahalTree;
-typedef struct mh_model_  MegahalModel;
-
-/* mh.h */
-typedef struct mh_state_ Megahal;
-
-struct mh_state_
+static void make_caps(char *key)
 {
-    void (*err)(const char * title, char * fmt, ...);
-    void (*warn)(char * title, char * fmt, ...);
-    void (*status)(char * fmt, ...);
-    char *dir;
-    MegahalDict * words, * greets;
-};
-
-struct mh_string_
-{
-    size_t len;
-    char * word;
-};
-
-struct mh_dict_
-{
-    unsigned long size;
-    MegahalString ** entry;
-    unsigned short * index;
-};
-
-struct mh_swap_
-{
-    unsigned short size;
-    MegahalString * from, * to;
-};
-
-struct mh_node_
-{
-    unsigned short symbol;
-    unsigned long usage;
-    unsigned short count;
-    unsigned short branch;
-    struct mh_node_ ** tree;
-};
-
-struct mh_model_
-{
-    unsigned char order;
-    MegahalTree * next, * prev, ** ctx;
-    MegahalDict * dict;
-};
-
+    int i;
+    for (i = 0; key[i] != '\0'; ++i)
+        key[i] = toupper(key[i]);
+}
 
 unsigned short mh_word_add(Megahal *state, MegahalDict * dict, MegahalString * word);
 
@@ -103,8 +54,7 @@ void mh_init(Megahal *state, void (*err)(const char * title, char * fmt, ...),
     state->warn = warn;
     state->status = status;
 
-    state->words  = mh_dictionary_new(state);
-    state->greets = mh_dictionary_new(state);
+    state->words = mowgli_patricia_create(make_caps);
 }
 
 unsigned short mh_word_add(Megahal *state, MegahalDict * dict, 
@@ -115,32 +65,6 @@ unsigned short mh_word_add(Megahal *state, MegahalDict * dict,
 
     return (unsigned short)i;
 }
-
-MegahalDict * mh_words_split(Megahal * state, char * in)
-{
-    int i;
-    MegahalDict * dict;
-    MegahalString * str;
-    char * token, * save, * p;
-
-    i    = 0;
-    save = mowgli_strdup(in);
-    dict = mh_dictionary_new(state);
-    p    = save;
-
-    while ((token = strtok_r(NULL, " ", &save)) && token)
-    {
-        str = mowgli_alloc(sizeof(MegahalString));
-        str->len = strlen(token);
-        str->word = mowgli_strdup(token);
-        dict->entry[i] = str;
-        i++;
-    }
-    
-    free(p);
-    return dict;
-}
-
 
 MegahalTree * mh_node_new(Megahal * state)
 {
@@ -202,5 +126,4 @@ MegahalModel * mh_model_new(Megahal * state, int order)
     return model;
 }
 
-void mh_reply(Megahal * state, char * in, char * out, size_t n)
-{
+void mh_reply(Megahal * state, char * in, char * out, size_t n);
